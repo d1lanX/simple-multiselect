@@ -1,5 +1,8 @@
 # simple-multiselect
 
+### features
+simple, lightweight and works with forms
+
 > usage
 
 include the script
