@@ -171,6 +171,10 @@ class SimpleMultiselect extends HTMLElement {
       fragment.append(span);
       this._value.push(info.value);
     });
+    this.dispatchEvent(new CustomEvent('change', {
+      bubbles: true,
+      composed: true,
+    }));
     this._internals.setFormValue(this._value);
     this.selected.innerHTML = '';
     this.selected.append(fragment);
