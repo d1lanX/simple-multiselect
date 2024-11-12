@@ -53,6 +53,7 @@ class SimpleMultiselect extends HTMLElement {
     this._value = [];
     this._selectedOptions = new Map();
     this._internals = this.attachInternals();
+    this._hadUserInteraction = false;
   }
 
   connectedCallback() {
@@ -83,6 +84,7 @@ class SimpleMultiselect extends HTMLElement {
     this.selected.addEventListener('click', this.handleOptionSelected.bind(this));
     this.options.addEventListener('click', this.handleOptionSelected.bind(this));
     document.addEventListener('click', this.handleClick.bind(this, this.container));
+    this.setSelectedOnLoad();
   }
 
   handleClick(multiselectContainer, event) {
@@ -174,10 +176,21 @@ class SimpleMultiselect extends HTMLElement {
     this.selected.append(fragment);
     if (this._selectedOptions.size > 0) {
       this.selected.style.display = 'flex';
+      if (!this._hadUserInteraction) {
+        this.input.type = 'hidden'
+      }
     } else {
       this.selected.style.display = 'none';
       this.input.type = 'search';
     }
+  }
+
+  setSelectedOnLoad() {
+    this._slot.assignedElements({ flatten: true }).forEach((ele) => {
+      if (ele.selected) {
+        this.setSelected(ele);
+      }
+    });
   }
 
   disconnectedCallback() {
