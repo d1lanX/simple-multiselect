@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Simple Multiselect</title>
+    <script defer src="./src/simple-multiselect.js"></script>
+    <style>
+      * {
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+          Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      }
+      main {
+        margin: 3rem;
+        display: grid;
+        grid-template-columns: 1fr;
+      }
+      @media (min-width: 768px) {
+        main {
+          grid-template-columns: 1fr 1fr;
+        }
+      }
+      section {
+        padding: 1rem;
+      }
+      section > p {
+        line-height: 2rem;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="info">
+        <h1>simple webcomponent</h1>
+        <p>
+          this webcomponent lets the user pick more than one option <br />
+          includes active search
+        </p>
+        <mark>usage</mark>
+        <p>include the script tag:</p>
+        <img src="./public/script.png" alt="Example script include" />
+        <p>how to use the tag:</p>
+        <img src="./public/example.png" alt="Example tag usage" />
+        <br />
+        <small>you have to pass a list of options in order for it to work</small>
+      </section>
+      <section class="component">
+        <form method="post">
+          <label for="cities">Cities</label>
+          <multi-select id="cities" name="cities" placeholder="Seleccione una ciudad">
+            <option value="São Paulo">São Paulo</option>
+            <option value="Lima">Lima</option>
+            <option value="Bogotá">Bogotá</option>
+            <option value="Santiago">Santiago</option>
+            <option value="Caracas">Caracas</option>
+            <option value="Buenos Aires">Buenos Aires</option>
+            <option value="Guayaquil">Guayaquil</option>
+            <option value="Santa Cruz de la Sierra">Santa Cruz de la Sierra</option>
+            <option value="Montevideo">Montevideo</option>
+            <option value="La Paz">La Paz</option>
+            <option value="Asunción">Asunción</option>
+          </multi-select>
+          <button type="submit">send</button>
+        </form>
+        <h3>value sent in form:</h3>
+        <p id="output"></p>
+      </section>
+    </main>
+  </body>
+  <script>
+    const form = document.querySelector('form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const formData = new FormData(e.currentTarget);
+      output.textContent = formData.get('cities');
+    });
+  </script>
+</html>
