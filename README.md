@@ -36,7 +36,6 @@ found a bug? create an issue! ill try to look into it
 
 **TODO:**
 
-- render selected options on fresh page reload
 - validate only children options as valid
 - add an icon to the end right of the container
 - optional color styles
