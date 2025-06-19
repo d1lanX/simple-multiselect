@@ -44,6 +44,9 @@ class SimpleMultiselect extends HTMLElement {
       background-color: #eee;
       font-weight: bold;
     }
+    .hovered {
+      background-color: #eee;
+    }
     .multiselect.open .options {
       display: block;
     }
@@ -54,10 +57,12 @@ class SimpleMultiselect extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
+    this.allowedKeys = ['ArrowDown', 'ArrowUp', 'Enter', 'Escape'];
     this._value = [];
     this._selectedOptions = new Map();
     this._internals = this.attachInternals();
     this._hadUserInteraction = false;
+    this._currentIndex = 0;
   }
 
   connectedCallback() {
@@ -85,10 +90,57 @@ class SimpleMultiselect extends HTMLElement {
     this._slot = this.shadow.querySelector('slot');
 
     this.input.addEventListener('input', this.searchOptions.bind(this));
+    this.input.addEventListener('keydown', this.handleKeyboard.bind(this));
     this.selected.addEventListener('click', this.handleOptionSelected.bind(this));
     this.options.addEventListener('click', this.handleOptionSelected.bind(this));
     document.addEventListener('click', this.handleClick.bind(this, this.container));
     this.setSelectedOnLoad();
+  }
+
+  handleKeyboard(event) {
+    if (!this.allowedKeys.includes(event.key)) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.container.classList.remove('open');
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      const selectedElement = this._slot.assignedElements({ flatten: true })[this._currentIndex];
+      if (selectedElement) {
+        this.setSelected(selectedElement);
+        this.container.classList.remove('open');
+        this.input.value = '';
+        this.input.blur();
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      if (this._currentIndex >= this._slot.assignedElements({ flatten: true }).length - 1) {
+        this._slot
+          .assignedElements({ flatten: true })
+          [this._currentIndex].classList.remove('hovered');
+        this._currentIndex = 0;
+      }
+      this._slot.assignedElements({ flatten: true })[this._currentIndex].classList.add('hovered');
+      this._currentIndex++;
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      if (this._currentIndex <= 0) {
+        this._slot
+          .assignedElements({ flatten: true })
+          [this._currentIndex].classList.remove('hovered');
+        this._currentIndex = this._slot.assignedElements({ flatten: true }).length - 1;
+      }
+      this._slot.assignedElements({ flatten: true })[this._currentIndex].classList.add('hovered');
+      this._currentIndex--;
+      return;
+    }
   }
 
   handleClick(multiselectContainer, event) {
