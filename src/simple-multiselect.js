@@ -40,6 +40,13 @@ class SimpleMultiselect extends HTMLElement {
     ::slotted(option:hover) {
       background-color: #eee;
     }
+    ::slotted(option.selected) {
+      background-color: #eee;
+      font-weight: bold;
+    }
+    .hovered {
+      background-color: #eee;
+    }
     .multiselect.open .options {
       display: block;
     }
@@ -50,10 +57,12 @@ class SimpleMultiselect extends HTMLElement {
   constructor() {
     super();
     this.shadow = this.attachShadow({ mode: 'open' });
+    this.allowedKeys = ['ArrowDown', 'ArrowUp', 'Enter', 'Escape'];
     this._value = [];
     this._selectedOptions = new Map();
     this._internals = this.attachInternals();
     this._hadUserInteraction = false;
+    this._currentIndex = 0;
   }
 
   connectedCallback() {
@@ -81,10 +90,57 @@ class SimpleMultiselect extends HTMLElement {
     this._slot = this.shadow.querySelector('slot');
 
     this.input.addEventListener('input', this.searchOptions.bind(this));
+    this.input.addEventListener('keydown', this.handleKeyboard.bind(this));
     this.selected.addEventListener('click', this.handleOptionSelected.bind(this));
     this.options.addEventListener('click', this.handleOptionSelected.bind(this));
     document.addEventListener('click', this.handleClick.bind(this, this.container));
     this.setSelectedOnLoad();
+  }
+
+  handleKeyboard(event) {
+    if (!this.allowedKeys.includes(event.key)) {
+      return;
+    }
+
+    if (event.key === 'Escape') {
+      this.container.classList.remove('open');
+      return;
+    }
+
+    if (event.key === 'Enter') {
+      const selectedElement = this._slot.assignedElements({ flatten: true })[this._currentIndex];
+      if (selectedElement) {
+        this.setSelected(selectedElement);
+        this.container.classList.remove('open');
+        this.input.value = '';
+        this.input.blur();
+      }
+      return;
+    }
+
+    if (event.key === 'ArrowDown') {
+      if (this._currentIndex >= this._slot.assignedElements({ flatten: true }).length - 1) {
+        this._slot
+          .assignedElements({ flatten: true })
+          [this._currentIndex].classList.remove('hovered');
+        this._currentIndex = 0;
+      }
+      this._slot.assignedElements({ flatten: true })[this._currentIndex].classList.add('hovered');
+      this._currentIndex++;
+      return;
+    }
+
+    if (event.key === 'ArrowUp') {
+      if (this._currentIndex <= 0) {
+        this._slot
+          .assignedElements({ flatten: true })
+          [this._currentIndex].classList.remove('hovered');
+        this._currentIndex = this._slot.assignedElements({ flatten: true }).length - 1;
+      }
+      this._slot.assignedElements({ flatten: true })[this._currentIndex].classList.add('hovered');
+      this._currentIndex--;
+      return;
+    }
   }
 
   handleClick(multiselectContainer, event) {
@@ -108,36 +164,37 @@ class SimpleMultiselect extends HTMLElement {
   }
 
   handleOptionSelected(e) {
-    if (e.target.matches('span')) {
-      this.restoreOption(e.target);
+    const target = e.target;
+    if (target.matches('span')) {
+      this.restoreOption(target);
+      return;
     }
 
-    if (e.target.matches('option')) {
-      this.setSelected(e.target);
+    if (target.matches('option.selected')) {
+      this.restoreOption(target, false);
+      return;
+    }
+
+    if (target.matches('option')) {
+      this.setSelected(target);
     }
   }
 
-  /** @param {HTMLOptionElement} option */
   setSelected(option) {
-    const value = option.value;
-    const text = option.textContent;
-    this._selectedOptions.set(value, {
-      text,
-      value,
-    });
-    option.remove();
-    option = null;
+    this._selectedOptions.set(option.value, { text: option.textContent, value: option.value });
+    option.classList.toggle('selected');
     this.renderSelectedOptions();
   }
 
-  /** @param {HTMLSpanElement} option */
-  restoreOption(option) {
-    const value = option.dataset.value;
-    const text = option.dataset.text;
-    this.appendChild(new Option(text, value));
+  restoreOption(option, shouldDelete = true) {
+    const value = option.dataset.value || option.value;
     this._selectedOptions.delete(value);
-    option.remove();
-    option = null;
+    if (shouldDelete) {
+      this.querySelector(`option[value="${value}"]`)?.classList?.toggle('selected');
+      option.remove();
+    } else {
+      option.classList.toggle('selected');
+    }
     this.renderSelectedOptions();
   }
 
@@ -151,15 +208,13 @@ class SimpleMultiselect extends HTMLElement {
     }
 
     this._slot.assignedElements({ flatten: true }).forEach((ele) => {
-      if (!ele.textContent.toLowerCase().includes(value.toLowerCase())) {
-        ele.style.display = 'none';
-      } else {
-        ele.style.display = 'block';
-      }
+      ele.style.display = ele.textContent.toLowerCase().includes(value.toLowerCase())
+        ? 'block'
+        : 'none';
     });
   }
 
-  renderSelectedOptions() {
+  renderSelectedOptions(checkOverflow = true) {
     const fragment = new DocumentFragment();
     this._value = [];
     this._selectedOptions.forEach((info) => {
@@ -168,33 +223,55 @@ class SimpleMultiselect extends HTMLElement {
       span.dataset.text = info.text;
       span.className = 'selected-option';
       span.textContent = info.text;
-      fragment.append(span);
+      fragment.appendChild(span);
       this._value.push(info.value);
     });
-    this.dispatchEvent(new CustomEvent('change', {
-      bubbles: true,
-      composed: true,
-    }));
+    this.dispatchEvent(
+      new CustomEvent('change', {
+        bubbles: true,
+        composed: true,
+      })
+    );
     this._internals.setFormValue(this._value);
     this.selected.innerHTML = '';
-    this.selected.append(fragment);
+    this.selected.appendChild(fragment);
+
     if (this._selectedOptions.size > 0) {
       this.selected.style.display = 'flex';
       if (!this._hadUserInteraction) {
-        this.input.type = 'hidden'
+        this.input.type = 'hidden';
       }
     } else {
       this.selected.style.display = 'none';
       this.input.type = 'search';
     }
+
+    if (checkOverflow) {
+      let extraSpan = this.getSpanWithCountOverflowing();
+      extraSpan && this.selected.insertAdjacentHTML('beforeend', extraSpan);
+    }
+  }
+
+  getSpanWithCountOverflowing() {
+    const containerWidth = this.selected.offsetWidth;
+    let hiddenOptionsCount = 0;
+
+    let selectedOptionsWidth = 0;
+    this.selected.childNodes.forEach((span) => {
+      selectedOptionsWidth += span.offsetWidth;
+      if (selectedOptionsWidth * 1.2 > containerWidth) {
+        span.style.display = 'none';
+        hiddenOptionsCount += 1;
+      }
+    });
+
+    return hiddenOptionsCount ? `<span class="selected-option">+${hiddenOptionsCount}</span>` : '';
   }
 
   setSelectedOnLoad() {
-    this._slot.assignedElements({ flatten: true }).forEach((ele) => {
-      if (ele.selected) {
-        this.setSelected(ele);
-      }
-    });
+    this._slot
+      .assignedElements({ flatten: true })
+      .forEach((ele) => (ele.selected ? this.selected(ele) : null));
   }
 
   disconnectedCallback() {
