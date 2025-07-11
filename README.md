@@ -1,7 +1,8 @@
 # simple-multiselect
 
 ### features
-simple, lightweight and works with forms
+
+simple, lightweight and works inside forms
 
 > usage
 
@@ -12,32 +13,46 @@ include the script
 ```
 
 and then simply use the tag
+
 ```html
 <multi-select></multi-select>
 ```
 
-## **you need to pass a list of options**
+with options:
+
 ```html
-<multi-select>
-    <option value="madrid">Madrid</option>
-    <option value="barcelona">Barcelona</option>
+<multi-select id="cities">
+  <option value="madrid">Madrid</option>
+  <option value="barcelona">Barcelona</option>
 </multi-select>
 ```
 
-it supports the following parameters:
+getting the selected values
 
-*placeholder*
+```js
+const multiselect = document.getElementById('cities');
+console.log(multiselect.value); // ['madrid', 'barcelona']
+```
 
-*id*
+you can also attach a change event to it
 
-*name*
+```js
+multiselect.addEventListener('change', (e) => {
+  // do something on change
+});
+```
 
-found a bug? create an issue! ill try to look into it
+### supported attributes:
+
+`placeholder` - the legend shown when there are no selected options
+
+`value` - selected values
+
+`name` - form name
 
 **TODO:**
 
+- keyboard support
 - validate only children options as valid
-- add an icon to the end right of the container
-- optional color styles
 - work with ajax
 - refactor messy code
