@@ -74,7 +74,7 @@ class SimpleMultiselect extends HTMLElement {
     <div class="multiselect">
       <div class="selected"></div>
       <input type="search" id="_multi-search" placeholder="${
-        this.getAttribute('placeholder') || 'Seleccione'
+        this.getAttribute('placeholder') || ''
       }">
       <div class="options">
         <slot></slot>
@@ -104,41 +104,6 @@ class SimpleMultiselect extends HTMLElement {
 
     if (event.key === 'Escape') {
       this.container.classList.remove('open');
-      return;
-    }
-
-    if (event.key === 'Enter') {
-      const selectedElement = this._slot.assignedElements({ flatten: true })[this._currentIndex];
-      if (selectedElement) {
-        this.setSelected(selectedElement);
-        this.container.classList.remove('open');
-        this.input.value = '';
-        this.input.blur();
-      }
-      return;
-    }
-
-    if (event.key === 'ArrowDown') {
-      if (this._currentIndex >= this._slot.assignedElements({ flatten: true }).length - 1) {
-        this._slot
-          .assignedElements({ flatten: true })
-          [this._currentIndex].classList.remove('hovered');
-        this._currentIndex = 0;
-      }
-      this._slot.assignedElements({ flatten: true })[this._currentIndex].classList.add('hovered');
-      this._currentIndex++;
-      return;
-    }
-
-    if (event.key === 'ArrowUp') {
-      if (this._currentIndex <= 0) {
-        this._slot
-          .assignedElements({ flatten: true })
-          [this._currentIndex].classList.remove('hovered');
-        this._currentIndex = this._slot.assignedElements({ flatten: true }).length - 1;
-      }
-      this._slot.assignedElements({ flatten: true })[this._currentIndex].classList.add('hovered');
-      this._currentIndex--;
       return;
     }
   }
